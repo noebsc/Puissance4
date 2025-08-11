@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Puissance 4 - IA & Multijoueur</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module">
+      import {
+        initializeApp
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+        set,
+        update,
+        get,
+        child,
+        remove,
+        serverTimestamp
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyAF2d6Z6AGVpbs_MySepZ55zkSp4x5JmII",
+        authDomain: "cosmos-fr.firebaseapp.com",
+        databaseURL: "https://cosmos-fr-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "cosmos-fr",
+        storageBucket: "cosmos-fr.appspot.com",
+        messagingSenderId: "480509265804",
+        appId: "1:480509265804:web:8022955e8b3cef74a4f8a9",
+        measurementId: "G-DZNV29HTVF"
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      window._firebase = {
+        db,
+        ref,
+        onValue,
+        set,
+        update,
+        get,
+        child,
+        remove,
+        serverTimestamp
+      };
+    </script>
+    <script defer src="app.js"></script>
+  </head>
+  <body><audio id="bgm" src="musique.mp3" preload="auto"></audio>
+    <header>
+      <h1>Puissance 4</h1>
+      <div class="modes"><button id="mode-ai" class="primary">Jouer contre l’IA</button><button id="mode-online">Multijoueur</button></div>
+    </header>
+    <section id="pre-game" class="card">
+      <h2>Pré‑partie</h2>
+      <div class="pre-grid">
+        <div><label>Pseudo</label><input id="nickname" placeholder="Pseudo" /><small class="muted" id="nick-hint"></small></div>
+        <div><label>Style de jeton</label>
+          <div class="token-picker"><select id="token-style">
+              <option value="0" selected>Sans effet</option>
+              <option value="1">Effet 1</option>
+              <option value="2">Effet 2</option>
+              <option value="3">Effet 3</option>
+              <option value="4">Effet 4</option>
+              <option value="5">Effet 5</option>
+              <option value="6">Effet 6</option>
+              <option value="7">Effet 7</option>
+              <option value="8">Effet 8</option>
+              <option value="9">Effet 9</option>
+              <option value="10">Effet 10</option>
+            </select>
+            <div class="token-preview">
+              <div class="disc p1"><img id="preview-img" alt="" /></div><small class="muted">Aperçu (couleur réelle en jeu)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="online-setup" class="card hidden">
+      <h2>Multijoueur</h2>
+      <div class="room-actions"><button id="create-room" class="primary">Créer un salon</button>
+        <div class="join"><input id="room-code" placeholder="Code du salon" /><button id="join-room">Rejoindre</button></div>
+      </div>
+      <p id="room-info"></p>
+    </section>
+    <main>
+      <div class="topbar">
+        <div class="status" id="status">Choisissez un mode.</div>
+        <div class="controls" id="controls"><label id="ai-ctrl">Niveau IA: <select id="ai-depth">
+              <option value="4">Facile</option>
+              <option value="5" selected>Normal</option>
+              <option value="6">Difficile</option>
+              <option value="7">Max</option>
+            </select></label><button id="restart">Recommencer</button></div>
+      </div>
+      <div id="countdown" class="countdown hidden"></div>
+      <div id="turn-timer" class="turn-timer hidden">20s</div>
+      <div class="layout">
+        <div id="board" class="board"></div>
+        <aside id="sidebar" class="sidebar card">
+          <h3 class="sb-title">Joueurs</h3>
+          <div class="sb-section">
+            <div class="badge red">Rouge</div>
+            <div id="name-red" class="sb-name">Hôte</div>
+          </div>
+          <div class="sb-section">
+            <div class="badge yellow">Jaune</div>
+            <div id="name-yellow" class="sb-name">Invité</div>
+          </div>
+          <div class="sb-section">
+            <div class="badge neutral">Spectateurs</div>
+            <ul id="spectator-list" class="sb-list">
+              <li class="muted">aucun spectateur</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+    <div id="toasts" class="toasts"></div>
+    <footer>
+    <small>
+        <strong>Puissance 4 V1.8 Pre-Release</strong><br>
+        <span style="color: white;">Créé avec </span><span style="color: red; font-size: 1.2em;">♥</span><span style="color: white;"> par Noé en 2025</span><br>
+        Ce jeu utilise des algorithmes avancés en mode solo. Toutes les données sont traitées et stockées en Europe (Belgique). Les données ne sont pas chiffrées : ne divulguez aucune information personnelle vous concernant ou concernant un tiers. Jouez fair-play et amusez-vous bien !<br>
+        <span style="font-family: 'Courier New', monospace; font-size: 0.7em; color: #1a365d;">contact: besancon.noe@gmail.com</span>
+    </small>
+</footer>
+  </body>
+</html>

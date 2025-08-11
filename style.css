@@ -1,0 +1,377 @@
+:root {
+  --bg: #0f1221;
+  --card: #171a2f;
+  --accent: #5865f2;
+  --accent-2: #22c55e;
+  --text: #e8e8f0;
+  --muted: #9aa0b4;
+  --p1: #ef4444; /* rouge /
+--p2:#eab308; / jaune */
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #0b0e1a;
+  border-bottom: 1px solid #24263d;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.2px;
+}
+.modes button {
+  margin-left: 8px;
+}
+button {
+  background: #23264a;
+  color: var(--text);
+  border: 1px solid #2f335e;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  transform: translateY(-1px);
+  background: #2a2e59;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+button.primary:hover {
+  filter: brightness(1.05);
+}
+.card {
+  background: var(--card);
+  border: 1px solid #262b52;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 16px 20px;
+}
+.hidden {
+  display: none;
+}
+.muted {
+  color: var(--muted);
+}
+#online-setup .room-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#online-setup input {
+  background: #0e1130;
+  color: var(--text);
+  border: 1px solid #2f335e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 200px;
+}
+main {
+  padding: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.status {
+  color: var(--muted);
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#ai-ctrl {
+  display: inline-flex;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    order: -1;
+  }
+}
+
+.board {
+  width: min(90vw, 720px);
+  aspect-ratio: 7/6;
+  background: #0a0d23;
+  border: 10px solid #1a1f47;
+  border-radius: 16px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 8px;
+  padding: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 40px rgba(88, 101, 242, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+.cell {
+  background: linear-gradient(180deg, #12163a 0%, #0e1233 100%);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.08s;
+}
+.cell:hover {
+  transform: translateY(-2px);
+}
+.disc {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  top: -100%;
+}
+.disc.p1 {
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ff7a7a,
+    #ef4444 55%,
+    #b91c1c 100%
+  );
+  box-shadow: 0 6px 0 #7f1d1d inset, 0 8px 24px rgba(239, 68, 68, 0.45);
+}
+.disc.p2 {
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ffe58f,
+    #eab308 55%,
+    #a16207 100%
+  );
+  box-shadow: 0 6px 0 #713f12 inset, 0 8px 24px rgba(234, 179, 8, 0.45);
+}
+.disc img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+  pointer-events: none;
+  border-radius: 50%;
+}
+.disc.drop {
+  animation: fall 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes fall {
+  0% {
+    top: -100%;
+  }
+  100% {
+    top: 10%;
+  }
+}
+.disc[data-duration] {
+  animation-duration: var(--fall, 0.45s);
+}
+
+footer {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Pré-partie */
+.pre-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.token-picker {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.token-preview .disc {
+  position: relative;
+  left: 0;
+  transform: none;
+  width: 64px;
+  top: 0;
+}
+
+/* Sidebar / Scoreboard */
+.sidebar {
+  min-height: 200px;
+}
+.sb-title {
+  margin: 0 0 10px 0;
+}
+.sb-section {
+  margin-bottom: 14px;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #2f3574;
+  background: #202653;
+}
+.badge.red {
+  border-color: #7f1d1d;
+  background: #3a1a22;
+  color: #ffd3d3;
+}
+.badge.yellow {
+  border-color: #7a5b12;
+  background: #3a2d12;
+  color: #fff3b0;
+}
+.badge.neutral {
+  border-color: #2f3574;
+  background: #202653;
+  color: #d1d5ff;
+}
+.sb-name {
+  margin-top: 6px;
+  font-weight: 600;
+}
+.sb-list {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+}
+
+/* Countdowns */
+.countdown {
+  font-size: 28px;
+  text-align: center;
+  margin: 8px 0;
+  color: #fff;
+}
+.turn-timer {
+  position: sticky;
+  top: 64px;
+  margin-bottom: 8px;
+  background: #202653;
+  color: #fff;
+  border: 1px solid #2f3574;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: inline-block;
+}
+
+/* Hide AI controls when in-game */
+.in-game #ai-ctrl {
+  display: none;
+}
+
+/* Toasts */
+.toasts {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 200;
+}
+.toast {
+  min-width: 260px;
+  max-width: 340px;
+  background: #1c224a;
+  border: 1px solid #2c3380;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  animation: toastIn 0.25s ease-out;
+}
+.toast.success {
+  border-color: #16a34a;
+  background: #12351f;
+}
+.toast.warn {
+  border-color: #f59e0b;
+  background: #3a2d12;
+}
+.toast.info {
+  border-color: #60a5fa;
+  background: #0b2742;
+}
+.toast .title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.toast .msg {
+  font-size: 14px;
+  color: #e6eaff;
+}
+.toast .close {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: #cbd5ff;
+  font-size: 16px;
+  cursor: pointer;
+}
+@keyframes toastIn {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.toast.hide {
+  animation: toastOut 0.25s ease-in forwards;
+}
+@keyframes toastOut {
+  to {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* Désactiver clic plateau pour spectateur */
+.spectator .board .cell {
+  cursor: default;
+}
+.spectator .board .cell:hover {
+  transform: none;
+}
