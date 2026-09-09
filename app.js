@@ -22,6 +22,7 @@ const viewerId = `viewer_${Math.random().toString(36).slice(2, 10)}`;
 let preCountdownTimer = null;
 let turnTimerId = null;
 let turnRemaining = 20;
+let isStartingOnlineGame = false;
 
 // Audio autoplay friendly
 const bgm = document.getElementById('bgm');
@@ -29,9 +30,6 @@ let audioUnlocked = false;
 
 // Firebase
 const { db, ref, onValue, set, update, get, child, remove, serverTimestamp } = window._firebase;
-
-// Variables pour timestamp
-const now = Date.now();
 
 // UI
 const boardEl = document.getElementById('board');
@@ -52,10 +50,17 @@ const nicknameInput = document.getElementById('nickname');
 const nickHint = document.getElementById('nick-hint');
 const tokenStyleSel = document.getElementById('token-style');
 const previewImg = document.getElementById('preview-img');
+const tokenSwatchesEl = document.getElementById('token-swatches');
 
 const nameRedEl = document.getElementById('name-red');
 const nameYellowEl = document.getElementById('name-yellow');
 const spectatorListEl = document.getElementById('spectator-list');
+const resultModalEl = document.getElementById('result-modal');
+const resultTitleEl = document.getElementById('result-title');
+const resultMessageEl = document.getElementById('result-message');
+const resultRestartBtn = document.getElementById('result-restart');
+const resultCloseBtn = document.getElementById('result-close');
+const toastsEl = document.getElementById('toasts');
 
 // Fonctions utilitaires manquantes
 function genDefaultNick() {
@@ -71,8 +76,9 @@ function genRoomCode() {
 }
 
 function captureLocalPlayerPrefs() {
-    myNickname = nicknameInput.value.trim() || genDefaultNick();
+    myNickname = (nicknameInput.value || '').trim().slice(0, 20) || genDefaultNick();
     myTokenStyle = parseInt(tokenStyleSel.value, 10) || 0;
+    nicknameInput.value = myNickname;
 }
 
 function setInputsLocked(locked) {
@@ -90,9 +96,31 @@ function startBackgroundMusic() {
 }
 
 function notify(type, title, message) {
-    // Fonction de notification simple
-    console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
-    // Ici vous pourriez implémenter une vraie notification UI
+    if (!toastsEl) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type || 'info'}`;
+    const content = document.createElement('div');
+    const titleEl = document.createElement('div');
+    const msgEl = document.createElement('div');
+    const closeBtn = document.createElement('button');
+    titleEl.className = 'title';
+    msgEl.className = 'msg';
+    closeBtn.className = 'close';
+    closeBtn.setAttribute('aria-label', 'Fermer');
+    closeBtn.textContent = '×';
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    content.appendChild(titleEl);
+    content.appendChild(msgEl);
+    toast.appendChild(content);
+    toast.appendChild(closeBtn);
+    const close = () => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 200);
+    };
+    closeBtn.addEventListener('click', close);
+    toastsEl.appendChild(toast);
+    setTimeout(close, 3600);
 }
 
 function scheduleRoomAutoCleanup(roomId, timestamp) {
@@ -110,6 +138,13 @@ nickHint.textContent = `Par défaut: ${nicknameInput.value}`;
 // Preview token
 updatePreview();
 tokenStyleSel.addEventListener('change', updatePreview);
+createTokenSwatches();
+resultRestartBtn.addEventListener('click', () => {
+    hideResultModal();
+    restartBtn.click();
+});
+resultCloseBtn.addEventListener('click', hideResultModal);
+
 function updatePreview() {
     const val = parseInt(tokenStyleSel.value, 10);
     if (val > 0) {
@@ -119,6 +154,43 @@ function updatePreview() {
         previewImg.removeAttribute('src');
         previewImg.style.display = 'none';
     }
+    updateTokenSwatchSelection();
+}
+
+function createTokenSwatches() {
+    if (!tokenSwatchesEl) return;
+    tokenSwatchesEl.innerHTML = '';
+    for (let i = 0; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'token-swatch';
+        btn.dataset.value = `${i}`;
+        btn.title = i === 0 ? 'Sans effet' : `Effet ${i}`;
+        if (i === 0) {
+            const dot = document.createElement('div');
+            dot.className = 'plain-dot';
+            btn.appendChild(dot);
+        } else {
+            const img = document.createElement('img');
+            img.src = `jetons/${i}.png`;
+            img.alt = `Effet ${i}`;
+            btn.appendChild(img);
+        }
+        btn.addEventListener('click', () => {
+            tokenStyleSel.value = `${i}`;
+            updatePreview();
+        });
+        tokenSwatchesEl.appendChild(btn);
+    }
+    updateTokenSwatchSelection();
+}
+
+function updateTokenSwatchSelection() {
+    if (!tokenSwatchesEl) return;
+    const selected = tokenStyleSel.value;
+    tokenSwatchesEl.querySelectorAll('.token-swatch').forEach((el) => {
+        el.classList.toggle('active', el.dataset.value === selected);
+    });
 }
 
 // Init UI
@@ -168,7 +240,7 @@ createRoomBtn.addEventListener('click', async () => {
     notify('success', 'Salon créé', `Code: ${roomId}`);
 
     await set(ref(db, `rooms/${roomId}`), {
-        createdAt: now,
+        createdAt: Date.now(),
         state: {
             board,
             currentPlayer,
@@ -181,7 +253,7 @@ createRoomBtn.addEventListener('click', async () => {
         spectators: {}
     });
 
-    scheduleRoomAutoCleanup(roomId, now);
+    scheduleRoomAutoCleanup(roomId, Date.now());
     listenRoom(roomId);
 });
 
@@ -291,8 +363,6 @@ function renderBoard() {
             cell.addEventListener('click', () => handleColumnClick(c));
             if (board[r][c] !== 0) {
                 const d = makeDisc(board[r][c]);
-                d.classList.add('drop');
-                d.style.top = '10%';
                 cell.appendChild(d);
             }
             boardEl.appendChild(cell);
@@ -392,6 +462,7 @@ function resetGame() {
     stopTurnTimer();
     countdownEl.classList.add('hidden');
     document.body.classList.remove('in-game');
+    hideResultModal();
     if (mode === 'online' && myOnlineRole === 'spectator') {
         document.body.classList.add('spectator');
     } else {
@@ -598,14 +669,30 @@ function finishGameNotify(winner) {
     if (winner === 1) {
         notify('success', 'Victoire Rouge', `${nameRedEl.textContent || 'Rouge'} gagne !`);
         setStatus('Victoire Rouge.');
+        showResultModal('Victoire Rouge', `${nameRedEl.textContent || 'Rouge'} remporte la partie.`);
     } else if (winner === 2) {
         notify('success', 'Victoire Jaune', `${nameYellowEl.textContent || 'Jaune'} gagne !`);
         setStatus('Victoire Jaune.');
+        showResultModal('Victoire Jaune', `${nameYellowEl.textContent || 'Jaune'} remporte la partie.`);
     } else {
         notify('info', 'Match nul', 'Aucun vainqueur.');
         setStatus('Match nul.');
+        showResultModal('Match nul', 'Aucun vainqueur cette fois.');
     }
-    renderBoard();
+}
+
+function showResultModal(title, message) {
+    if (!resultModalEl || !resultTitleEl || !resultMessageEl) return;
+    resultTitleEl.textContent = title;
+    resultMessageEl.textContent = message;
+    resultModalEl.classList.remove('hidden');
+    resultModalEl.setAttribute('aria-hidden', 'false');
+}
+
+function hideResultModal() {
+    if (!resultModalEl) return;
+    resultModalEl.classList.add('hidden');
+    resultModalEl.setAttribute('aria-hidden', 'true');
 }
 
 // IA forte: minimax + alpha-bêta
@@ -727,7 +814,6 @@ async function aiMove() {
         updateStatusTurn();
         startTurnIfNeeded();
     }
-    renderBoard();
 }
 
 // Sync Firebase + Scoreboard + Spectateurs
@@ -761,6 +847,11 @@ function listenRoom(id) {
             }
         }
         
+        if (!data.started) {
+            document.body.classList.remove('in-game');
+            stopTurnTimer();
+        }
+
         // Re-rendre le plateau avec les nouvelles données
         renderBoard();
         updateStatusTurn();
@@ -773,12 +864,30 @@ function listenRoom(id) {
     });
     
     // Écouter les changements de joueurs
-    onValue(playersRef, (snap) => {
+    onValue(playersRef, async (snap) => {
         const players = snap.val();
         if (!players) return;
-        
-        // Mettre à jour le statut des joueurs connectés
-        console.log('Players status:', players);
+        const hasTwoPlayers = Boolean(players.host && players.guest);
+        if (!hasTwoPlayers) {
+            setStatus("En attente d'un deuxième joueur...");
+            return;
+        }
+        if (document.body.classList.contains('in-game')) return;
+        if (myOnlineRole === 'host' && !isStartingOnlineGame) {
+            const startedSnap = await get(child(ref(db), `rooms/${id}/state/started`));
+            if (startedSnap.val() === true) return;
+            isStartingOnlineGame = true;
+            startPreGameCountdown(async () => {
+                startBackgroundMusic();
+                document.body.classList.add('in-game');
+                await update(ref(db, `rooms/${id}/state`), { started: true });
+                setInputsLocked(true);
+                startTurnIfNeeded();
+                isStartingOnlineGame = false;
+            });
+        } else {
+            setStatus('Partie prête, en attente du lancement...');
+        }
     });
     
     // Écouter les spectateurs
@@ -795,13 +904,21 @@ function listenRoom(id) {
         if (spectatorListEl) {
             spectatorListEl.innerHTML = '';
             spectators.forEach(name => {
-                const div = document.createElement('div');
-                div.textContent = name;
-                div.className = 'spectator-name';
-                spectatorListEl.appendChild(div);
+                const li = document.createElement('li');
+                li.textContent = name;
+                li.className = 'spectator-name';
+                spectatorListEl.appendChild(li);
             });
+            if (spectators.length === 0) {
+                spectatorListEl.innerHTML = '<li class="muted">aucun spectateur</li>';
+            }
         }
     });
 
 }
 
+window.addEventListener('beforeunload', async () => {
+    if (mode === 'online' && roomId && myOnlineRole === 'spectator') {
+        await remove(ref(db, `rooms/${roomId}/spectators/${viewerId}`));
+    }
+});
