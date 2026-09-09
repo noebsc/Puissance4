@@ -54,7 +54,7 @@
     <section id="pre-game" class="card">
       <h2>Pré‑partie</h2>
       <div class="pre-grid">
-        <div><label>Pseudo</label><input id="nickname" placeholder="Pseudo" /><small class="muted" id="nick-hint"></small></div>
+        <div><label for="nickname">Pseudo</label><input id="nickname" placeholder="Pseudo" maxlength="20" /><small class="muted" id="nick-hint"></small></div>
         <div><label>Style de jeton</label>
           <div class="token-picker"><select id="token-style">
               <option value="0" selected>Sans effet</option>
@@ -69,6 +69,7 @@
               <option value="9">Effet 9</option>
               <option value="10">Effet 10</option>
             </select>
+            <div id="token-swatches" class="token-swatches"></div>
             <div class="token-preview">
               <div class="disc p1"><img id="preview-img" alt="" /></div><small class="muted">Aperçu (couleur réelle en jeu)</small>
             </div>
@@ -79,7 +80,7 @@
     <section id="online-setup" class="card hidden">
       <h2>Multijoueur</h2>
       <div class="room-actions"><button id="create-room" class="primary">Créer un salon</button>
-        <div class="join"><input id="room-code" placeholder="Code du salon" /><button id="join-room">Rejoindre</button></div>
+        <div class="join"><input id="room-code" placeholder="Code du salon" maxlength="6" /><button id="join-room">Rejoindre</button></div>
       </div>
       <p id="room-info"></p>
     </section>
@@ -116,6 +117,16 @@
         </aside>
       </div>
     </main>
+    <div id="result-modal" class="result-modal hidden" aria-hidden="true">
+      <div class="result-modal-card">
+        <h2 id="result-title">Partie terminée</h2>
+        <p id="result-message"></p>
+        <div class="result-actions">
+          <button id="result-restart" class="primary">Rejouer</button>
+          <button id="result-close">Fermer</button>
+        </div>
+      </div>
+    </div>
     <div id="toasts" class="toasts"></div>
     <footer>
     <small>
